@@ -1,14 +1,5 @@
 set(prj_name UAV)
 
-set(FREEGLUT_INCLUDE_DIRS E:/ExternalLibs/VideoMan1.1/3rdparty/freeglut/include)
-set(FREEGLUT_LIBRARIES E:/ExternalLibs/VideoMan1.1/3rdparty/freeglut/freeglut.lib)
-set(VIDEOMAN_INCLUDE_DIRS E:/ExternalLibs/VideoMan1.1/include)
-set(VIDEOMAN_LIB_DIRS E:/ExternalLibs/VideoMan1.1/build/lib)
-set(VIDEOMAN_LIBRARIES 
-	debug VideoMand.lib
-	optimized VideoMan.lib
-)
-
 #find_package(OpenCV REQUIRED)
 #find_package(Freeglut REQUIRED)
 #find_package(OpenGL REQUIRED)

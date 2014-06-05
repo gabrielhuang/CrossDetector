@@ -14,6 +14,16 @@ set(my_src_dir ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(my_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${my_include_dir})
 
+# FreeGlut & Videoman, set following 5 options
+set(FREEGLUT_INCLUDE_DIRS E:/ExternalLibs/VideoMan1.1/3rdparty/freeglut/include)
+set(FREEGLUT_LIBRARIES E:/ExternalLibs/VideoMan1.1/3rdparty/freeglut/freeglut.lib)
+set(VIDEOMAN_INCLUDE_DIRS E:/ExternalLibs/VideoMan1.1/include)
+set(VIDEOMAN_LIB_DIRS E:/ExternalLibs/VideoMan1.1/build/lib)
+set(VIDEOMAN_LIBRARIES 
+	debug VideoMand.lib
+	optimized VideoMan.lib
+)
+
 # Boost - Set the following 5 options
 set(boost_include_dir "E:/ExternalLibs/boost_1_55_0")
 set(boost_lib_dir "E:/ExternalLibs/boost_1_55_0/stage/lib")
@@ -74,25 +84,3 @@ include_directories(${opencv_include_dir})
 link_directories(${opencv_link_dir})
 
 add_subdirectory(src)
-
-# # Boost
-# include_directories(${boost_include_dir})
-# link_directories(${boost_lib_dir})
-
-# # Eigen
-# include_directories(${eigen_include_dir})
-
-
-
-# file(GLOB_RECURSE prj_include "${my_include_dir}/${prj_name}/*")
-# message("Added library ${prj_name}")
-# file(GLOB_RECURSE prj_src "${my_src_dir}/${prj_name}/*")
-# add_executable(
-	# ${prj_name}
-	# ${prj_src}
-# )
-# # target_link_libraries(
-	# # ${prj_name}
-	# # ${prj_dep}
-# # )	
-
