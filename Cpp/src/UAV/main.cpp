@@ -57,7 +57,7 @@ int main (int argc, char* argv[])
 
 		while(true)
 		{
-			cout << "Waiting for messages" << endl;
+			cout << "Waiting for messages..." << endl;
 
 			int num_chars = recv(main_socket, buffer, buffer_size, 0);
 			assure(num_chars != SOCKET_ERROR, "recv");
@@ -77,10 +77,10 @@ int main (int argc, char* argv[])
 				string info = to_string(var1) + "," + to_string(var2);
 				num_chars = send(main_socket, info.c_str(), info.size(),0);
 				assure(num_chars != SOCKET_ERROR, "send");
+				cout << "[Update] -> \"" << info << "\"" << endl;
 			}
 			else if(!msg.compare("fin"))
 			{
-
 				break;
 			}
 			else

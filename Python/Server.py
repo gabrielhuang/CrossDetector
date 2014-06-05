@@ -6,41 +6,25 @@ from math import *
 from time import sleep
 
 def initserv():
-    hote = ''
-    port = 12800
     global connexion_principale
     global connexion_avec_client
     global msg_recu
+    global hote
+    global port
+    hote = ''
+    port = 12800
     connexion_principale = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     connexion_principale.bind((hote, port))
     connexion_principale.listen(5)
-    print("Le serveur écoute à présent sur le port {}".format(port))
-    connexion_avec_client, infos_connexion = connexion_principale.accept()
-    print("Connexion acceptee de {}".format(infos_connexion))
     msg_recu = ""
-    return
 
 def updatetarget():
     connexion_avec_client.send("update".encode())
-    msg_recu = connexion_avec_client.recv(10)
+    msg_recu = connexion_avec_client.recv(100)
     msg_recu = msg_recu.decode()
     print(msg_recu)
-    coordx = ""
-    coordy = ""
-    x = 0
-    for i in msg_recu:
-        if i!=',':
-            if x==0:
-                coordx = coordx+i
-            else:
-                coordy = coordy+i
-        else:
-            x=1
-    if x==0:
-            return (0,0)
-    coordx = int(coordx) #à changer si float
-    coordy = int(coordy) #à changer si float
-    return (coordx,coordy)
+    x = msg_recu.split(",")
+    return float(x[0]), float(x[1])
 
 def getwaypoint(anglelacet, angleroulis, angletangage, altitude, currentlat,currentlong):
     deltapixx, deltapixy = updatetarget()
@@ -85,15 +69,22 @@ def getwaypoint(anglelacet, angleroulis, angletangage, altitude, currentlat,curr
     
 def closeserv():
     print("Fermeture de la connexion")
-    connexion_avec_client.send("fin".encode())
-    connexion_avec_client.close()
     connexion_principale.close()
     return
 
 if __name__ == "__main__":
     initserv()
     while True:
-        print("Demande coordonnees")
-        updatetarget()
-        sleep(1.)
+        print("Le serveur écoute à présent sur le port {}".format(port))
+        try:
+            connexion_avec_client, infos_connexion = connexion_principale.accept()
+            print("Connexion acceptee de {}".format(infos_connexion))
+            while True:
+                print("Demande coordonnees...")
+                updatetarget()
+                sleep(1.)
+        except:
+            pass
+        connexion_avec_client.send("fin".encode())
+        connexion_avec_client.close()
     closeserv()
