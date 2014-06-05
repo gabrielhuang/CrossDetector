@@ -3,40 +3,40 @@ CrossDetector
 
 Detector for red crosses based on Viola &amp; Jones's cascade
 
-French Description
-------------------
+Configuration et Installation
+-----------------------------
 
 Ceci est la partie "analyse vidéo" du projet Dassault UAV Challenge
 de l'ECP Hexa Team.
 
-______________________________________________________
 Pour configurer et compiler le projet sur votre ordinateur,
 suivre ces étapes:
 
-1/ Installer OpenCV, Visual C++ 2010, CMake
+1/ 	Installer OpenCV, Visual C++ 2010, CMake, Boost, et VideoMan (si nécessaire)
 
-2/ Ouvrir le ./CMakeLists.txt (à trouver dans le même répertoire
-que ReadMe!.txt)
-
-3/ Repérer :
-"set(opencv_ver 248)
-set(opencv_include_dir "E:/ExternalLibs/opencv/build/include") 
-set(opencv_lib_dir "E:/ExternalLibs/opencv/build/x86/vc10/lib")"
-
+2/ 	Ouvrir le ./Cpp/CMakeLists.txt
 Remplacer les versions et chemins par ceux correspondant à votre configuration
 
-4/  Lancer ./prj/configure.bat, qui générera les fichiers projet dans ./prj
+4/ 	Exécuter cmake dans la racine du dépôt Git, par exemple en générant dans ./Cpp/build
 S'il y a des erreurs, corriger le fichier CMakeLists.txt en conséquence
 
-5/	Ouvrir la solution ./prj/UAV.sln
+5/	Ouvrir la solution ./Cpp/build/UAV.sln
 
-6/	Dans le fichier main.cpp de WebcamTest
-Repérer string cross_cascade_name = "Z:\\Cpp\\UAV\\Cpp\\res\\cascade_5.xml";
+6/	Dans les fichier "main.cpp" de WebcamTest, et "main.cpp" de "UAV"
+Repérer [string cross_cascade_name = "Z:\\Cpp\\UAV\\Cpp\\res\\cascade_5.xml";]
 Et remplacer par le chemin menant au classifieur souhaité
 
-7/  Compiler en Release
+7/	Vous pouvez alors lancer la démo ./bin/Release/WebcamTest avec pour premier paramètre le chemin vers le classifieur (un glisser-déposer peut suffire), compiler, puis tester sur une webcam.
 
-8/	On peut alors lancer la démo ./bin/Release/WebcamTest avec pour premier paramètre le chemin vers le classifieur (un glisser-déposer peut suffire)
+8/	a.	Dans ./Cpp/src/UAV/main.cpp répérer les lignes:
+
+//typedef cv::VideoCapture VideoSourceType; // Use opencv VideoCapture
+typedef VideoManSource VideoSourceType; // Use VideoMan video
+
+	et (dé)commenter en fonction
+
+	b.	Vous pouvez enfin lancer le serveur Python ./Python/server.py, puis lancer UAV.exe (le client) qui enverra régulièrement la position de la croix détectée au serveur.
+
 
 ______________________________________________________
 Description des dossiers
