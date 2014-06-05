@@ -254,6 +254,39 @@ void showHelp()
 	printf("========\n");
 }
 
+void initAll()
+{
+	camera_isOpened = false;
+
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGBA | GLUT_MULTISAMPLE );
+	glutInitWindowPosition( 0, 0 );
+	glutInitWindowSize(50, 50);
+	int argc = 1; 
+	char* argv[] = { "a.exe" };
+	glutInit( &argc, argv );
+	glutCreateWindow("VideoMan-OpenCV Simple");
+	glutHideWindow();   
+
+	if (!InitializeVideoMan())
+	{
+		showHelp();
+		cout << "Error intializing VideoMan" << endl;
+		cout << "Pres Enter to exit" << endl;		 
+		getchar();
+	}
+
+	showHelp();
+	glutShowWindow();
+	glutReshapeFunc(glutResize);
+	glutDisplayFunc(glutDisplay);
+	glutIdleFunc(glutDisplay);
+	glutKeyboardFunc(glutKeyboard);
+	glutSpecialFunc(glutSpecialKeyboard);
+	glutSetOption( GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION); 
+
+	fullScreened = false;
+}
+
 struct VideoManSource
 {
 	/*boost::thread*		thread_;*/
@@ -262,36 +295,7 @@ struct VideoManSource
 	{
 		cout << "VideoMan Video Source" << endl;
 		cout << "=====================================================" << endl;
-
-		camera_isOpened = false;
-
-		glutInitDisplayMode( GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGBA | GLUT_MULTISAMPLE );
-		glutInitWindowPosition( 0, 0 );
-		glutInitWindowSize(50, 50);
-		int argc = 1; 
-		char* argv[] = { "a.exe" };
-		glutInit( &argc, argv );
-		glutCreateWindow("VideoMan-OpenCV Simple");
-		glutHideWindow();   
-	
-		if (!InitializeVideoMan())
-		{
-			showHelp();
-			cout << "Error intializing VideoMan" << endl;
-			cout << "Pres Enter to exit" << endl;		 
-			getchar();
-		}
-
-		showHelp();
-		glutShowWindow();
-		glutReshapeFunc(glutResize);
-		glutDisplayFunc(glutDisplay);
-		glutIdleFunc(glutDisplay);
-		glutKeyboardFunc(glutKeyboard);
-		glutSpecialFunc(glutSpecialKeyboard);
-		glutSetOption( GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION); 
-
-		fullScreened = false;
+		initAll();
 	}
 
 	~VideoManSource()

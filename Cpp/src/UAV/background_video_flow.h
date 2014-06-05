@@ -93,12 +93,6 @@ public:
 		kalman_.set_process_speed_variance(process_speed_variance);
 		float last_prediction_date = float(clock()) / float(CLOCKS_PER_SEC);
 
-		camera_ = new VideoSourceType(0);
-		if(!camera_->isOpened())
-		{
-			throw std::runtime_error("Error opening video capture");
-		}
-
 		loop_ = true;
 		thread_ = new boost::thread(&BackgroundVideoFlow::loop, this);
 	}
@@ -134,6 +128,15 @@ public:
 
 	void loop()
 	{
+		// Note, camera must ABSOLUTELY be initialized
+		// in same thread when using (Free)GLUT
+		std::cout << "[BGVF] Loading camera..." << std::endl;
+		camera_ = new VideoSourceType(0);
+		if(!camera_->isOpened())
+		{
+			throw std::runtime_error("Error opening video capture");
+		}
+
 		std::cout << "[BGVF] Started Loop" << std::endl;
 		float last_prediction_date = float(clock()) / float(CLOCKS_PER_SEC);
 		cv::Mat raw_frame, processed_frame;

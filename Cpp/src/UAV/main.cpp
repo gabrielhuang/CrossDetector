@@ -31,6 +31,7 @@ void assure(bool condition, const string& msg = "Assure", bool confirm = false)
 	}
 }
 
+
 int main(int argc, char* argv[])
 {
 	// Parameters
