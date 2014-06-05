@@ -6,6 +6,9 @@
 #include <sstream>
 #include <string>
 
+#include "background_video_flow.h"
+#include "videoman_dev.h"
+
 using namespace std;
 
 template <typename T>
@@ -28,8 +31,13 @@ void assure(bool condition, const string& msg = "Assure", bool confirm = false)
 	}
 }
 
-int main (int argc, char* argv[])
+int main(int argc, char* argv[])
 {
+	// Parameters
+	string cross_cascade_name = "Z:\\Cpp\\UAV\\Cpp\\res\\cascade_5.xml";
+	//typedef cv::VideoCapture VideoSourceType; // Use opencv VideoCapture
+	typedef VideoManSource VideoSourceType; // Use VideoMan video
+
 	try
 	{
 		// Connection Data
@@ -52,8 +60,10 @@ int main (int argc, char* argv[])
 
 		// Start video flow
 		cout << "Connection ok, initiating video flow" << endl;
-
-		// Videoflow
+		BackgroundVideoFlow<VideoSourceType> background_video_flow;
+		background_video_flow.cross_cascade_name = cross_cascade_name;
+		background_video_flow.init();
+		cout << "Initialized background video flow" << endl;
 
 		while(true)
 		{
@@ -73,8 +83,9 @@ int main (int argc, char* argv[])
 
 			if(!msg.compare("update"))
 			{
-				double var1 = 0.345, var2 = -0.19;
-				string info = to_string(var1) + "," + to_string(var2);
+				double x = background_video_flow.x();
+				double y = background_video_flow.y();
+				string info = to_string(x) + "," + to_string(y);
 				num_chars = send(main_socket, info.c_str(), info.size(),0);
 				assure(num_chars != SOCKET_ERROR, "send");
 				cout << "[Update] -> \"" << info << "\"" << endl;
@@ -101,4 +112,5 @@ int main (int argc, char* argv[])
 	}
 	cout << "Application will now exit" << endl;
 	cin.get();
+	return 0;
 }

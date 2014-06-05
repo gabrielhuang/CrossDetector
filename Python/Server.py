@@ -85,6 +85,5 @@ if __name__ == "__main__":
                 sleep(1.)
         except:
             pass
-        connexion_avec_client.send("fin".encode())
         connexion_avec_client.close()
     closeserv()

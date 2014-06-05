@@ -19,7 +19,8 @@ include_directories(${OpenCV_INCLUDE_DIRS}
 )
 link_directories(${VIDEOMAN_LIB_DIRS})
 add_executable(${prj_name} 
-	client.cpp 
+	videoman_dev.h
+	background_video_flow.h
 	main.cpp
 )
 target_link_libraries(${prj_name} 

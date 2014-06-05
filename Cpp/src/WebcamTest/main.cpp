@@ -21,11 +21,11 @@ int main(int argc, char* argv[])
     // Parameters
     UInt    wait_delay = 5; // (ms)
 
-    UInt	resize_cols = 640;//320;
-    UInt	resize_rows = 480;//240;
+    UInt	resize_cols = 640;
+    UInt	resize_rows = 480;
     UInt	median_filter_bandwith = 7;
-    UChar	a_min = 135; // set to 145 for stronger filter (partly removes skin color)
-    UChar	b_min = 122; // set to 130 for stronger filter (partly removes skin color)
+    UChar	a_min = 135; 
+    UChar	b_min = 122; 
     UChar   l_max = 200;
 
     UInt	min_size = 16;
@@ -34,6 +34,9 @@ int main(int argc, char* argv[])
 
 	UChar	refiner_threshold = 50;
 	UChar	refiner_flatten = 91;
+
+	float	process_position_variance = 100.f;
+	float   process_speed_variance = 1.f;
 
     string cross_cascade_name = "Z:\\Cpp\\UAV\\Cpp\\res\\cascade_5.xml";
 
@@ -79,14 +82,9 @@ int main(int argc, char* argv[])
 		refiner.set_flatten_limit(float(refiner_flatten) / 100.f);
 
 		// Kalman filtering
-		//float last_prediction_date = float(clock()) / float(CLOCKS_PER_SEC);
-		//float last_detection_date = 0.f;
-		//float max_misdetection_time = 3.f; // seconds
-		//bool cross_mode = false;
 		Kalman kalman;
-		//float x = 500.f;
-		kalman.set_process_position_variance(100.f);
-		kalman.set_process_speed_variance(1.f);
+		kalman.set_process_position_variance(process_position_variance);
+		kalman.set_process_speed_variance(process_speed_variance);
 		float last_prediction_date = float(clock()) / float(CLOCKS_PER_SEC);
 
         while (true)
@@ -133,7 +131,7 @@ int main(int argc, char* argv[])
 			{
 				// Draw Refined Center
 				cv::Point adjusted_center(int(ratio_x * float(center.x)), int(ratio_y * float(center.y)));
-				cv::circle(raw_frame, adjusted_center, 16, cv::Scalar(0.f, 255.f, 0.f, 0), CV_FILLED);
+				cv::circle(raw_frame, adjusted_center, 32, cv::Scalar(0.f, 0.f, 255.f, 0), CV_FILLED);
 				cout << "Cross @ " << adjusted_center << endl;
 
 				// Kalman Correct
@@ -154,7 +152,7 @@ int main(int argc, char* argv[])
 						      actually_found ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 255), 20);
 				cv::Point predicted_center = cv::Point(prediction.at<float>(0),prediction.at<float>(1));
 				cv::Point adjusted_predicted_center(int(ratio_x * float(predicted_center.x)), int(ratio_y * float(predicted_center.y)));
-				cv::circle(raw_frame, adjusted_predicted_center, 28, cv::Scalar(255.f, 0.f, 255.f, 0), CV_FILLED);
+				cv::circle(raw_frame, adjusted_predicted_center, 20, cv::Scalar(0.f, 255.f, 0, 0), CV_FILLED);
 			}
 
             // Show frames
