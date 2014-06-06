@@ -192,6 +192,7 @@ bool InitializeVideoMan()
 	{
 		cout << "Found more than one device. Use (0 to " << numDevices << ") ?" << endl;
 		cin >> videoInputID;
+		d = videoInputID;
 	}
 
 	device = list[d];
@@ -322,7 +323,7 @@ struct VideoManSource
 			glutDisplay();
 			if(has_new)
 			{
-				cv::flip(inputCopy, frame, -1);
+				cv::flip(inputCopy, frame, 0);
 				has_new = false;
 				return;
 			}
