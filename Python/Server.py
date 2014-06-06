@@ -1,6 +1,6 @@
-# -*- coding: utf8 -*-
+#  -*- coding: utf8 -*-
 
-#Server side
+# Server side
 import socket
 from math import *
 from time import sleep
@@ -28,8 +28,8 @@ def updatetarget():
 
 def getwaypoint(anglelacet, angleroulis, angletangage, altitude, currentlat,currentlong):
     deltapixx, deltapixy = updatetarget()
-    deltapixx = deltapixx*1 #correction fisheye
-    deltapixy = deltapixy*1 #correction fisheye
+    deltapixx = deltapixx*1 # correction fisheye
+    deltapixy = deltapixy*1 # correction fisheye
     """
     la latitude augmente vers le nord
     la longitude augmente vers l'est (Greenwich = 0)
@@ -43,12 +43,12 @@ def getwaypoint(anglelacet, angleroulis, angletangage, altitude, currentlat,curr
     positifs si il est en haut à droite
     
     """
-    currentlat = currentlat*111205.12 #conversion en m
-    currentlong = currentlong*73517.0 #conversion en m
-    lref = 1 #longueur de la regle utilisee pour le calibrage en m
-    href = 1 #hauteur de la camera pour lé calibrage
-    deltapixrefx = 200 #taille ée la regle pour le calibrage, apres correction fisheye
-    deltapixrefy = 200 #taille de la règle pour le calibrage, après correction fisheye
+    currentlat = currentlat*111205.12 # conversion en m
+    currentlong = currentlong*73517.0 # conversion en m
+    lref = 1 # longueur de la regle utilisee pour le calibrage en m
+    href = 1 # hauteur de la camera pour lé calibrage
+    deltapixrefx = 200 # taille ée la regle pour le calibrage, apres correction fisheye
+    deltapixrefy = 200 # taille de la règle pour le calibrage, après correction fisheye
     wplat = currentlat -\
             (tan(angletangage*pi/180)*altitude -
             deltapixy*altitude*lref/(cos(angletangage*pi/180)*href*deltapixrefx))\
