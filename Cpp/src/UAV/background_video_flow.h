@@ -71,7 +71,7 @@ public:
 		a_high(170),
 		process_position_variance(40.f),
 		process_speed_variance(1.f),
-		cross_cascade_name("Z:\\Cpp\\UAV\\Cpp\\res\\cascade_5.xml")
+		cross_cascade_name("..\\res\\cascade_5.xml")
 	{
 	}
 
