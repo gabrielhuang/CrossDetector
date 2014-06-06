@@ -22,7 +22,9 @@ rows_(240),
 cols_(320),
 median_filter_bandwith_(5),
 channels_(3, cv::Mat()),
-debug_(false)
+debug_(false),
+low_(115.f),
+high_(170.f)
 {
 }
 
@@ -60,6 +62,18 @@ Preprocess& Preprocess::set_resize(UInt rows, UInt cols)
 Preprocess& Preprocess::set_debug(bool flag)
 {
     debug_ = flag;
+    return *this;
+}
+
+Preprocess& Preprocess::set_low(UChar x)
+{
+    low_ = float(x);
+    return *this;
+}
+
+Preprocess& Preprocess::set_high(UChar x)
+{
+    high_ = float(x);
     return *this;
 }
 
@@ -102,23 +116,30 @@ Preprocess& Preprocess::get(const cv::Mat& src, cv::Mat& dst)
 
 namespace
 {
-	inline float soft(float L, float a, float b, 
-			   float l_max, float a_min, float b_min)
+	inline float soft(float L, float a, float b,
+					  float low = 115.f, float high = 170.f, float level = 0.f)
 	{
-		float sigma = 30.f;
-		float low = 135.f;
-		float high = 170.f;
-		float level = 0.f;
-		if(L <= l_max && a >= 135 && b >= b_min)
+		if(a > high)
 		{
-			if (a > high) return 255.f;
-			else return level + (a - low) / (high - low) * (255.f - level);
-			//return 255.f * max(0.f, 1.f / (1.f + expf(-(a - 120.f) / sigma)));
+			return 255.f;
 		}
-		else
+		else if(a < low)
 		{
 			return 0.f;
 		}
+		else
+		{
+			return level + (a - low) / (high - low) * (255.f - level);
+		}
+		//if(L <= l_max && a >= 135 && b >= b_min)
+		//{
+		//	if (a > high) return 255.f;
+		//	else return level + (a - low) / (high - low) * (255.f - level);
+		//}
+		//else
+		//{
+		//	return 0.f;
+		//}
 	}
 }
 
@@ -140,7 +161,7 @@ Preprocess& Preprocess::get_soft(const cv::Mat& src, cv::Mat& dst)
 			dst.at<float>(row, col) = soft(channels_[0].at<UChar>(row, col), 
 										   channels_[1].at<UChar>(row, col), 
 										   channels_[2].at<UChar>(row, col), 
-										   l_max_, a_min_, b_min_);
+										   low_, high_);
 		}
 	}
 

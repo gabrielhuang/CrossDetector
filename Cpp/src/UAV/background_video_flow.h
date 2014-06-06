@@ -36,13 +36,14 @@ public:
 	UChar				a_min; 
 	UChar				b_min;
 	UChar				l_max;
+	UChar				a_low;
+	UChar				a_high;
 
 	UInt				min_size;
 	UInt				min_count;
 	float				scale;
 
 	UChar				refiner_threshold;
-	UChar				refiner_flatten;
 
 	float				process_position_variance;
 	float				process_speed_variance;
@@ -66,7 +67,8 @@ public:
 		min_count(34),
 		scale(1.2f),
 		refiner_threshold(50),
-		refiner_flatten(91),
+		a_low(117),
+		a_high(170),
 		process_position_variance(40.f),
 		process_speed_variance(1.f),
 		cross_cascade_name("Z:\\Cpp\\UAV\\Cpp\\res\\cascade_5.xml")
@@ -76,6 +78,7 @@ public:
 	void init()
 	{
         preprocessor_.set_l_max(l_max).set_a_min(a_min).set_b_min(b_min);
+		preprocessor_.set_low(a_low).set_high(a_high);
         preprocessor_.set_resize(resize_rows, resize_cols);
         preprocessor_.set_median_filter_bandwith(median_filter_bandwith);
         preprocessor_.set_debug(false);
@@ -87,7 +90,6 @@ public:
         detector_.set_verbose(true);
 
 		refiner_.set_threshold(float(refiner_threshold) / 100.f);
-		refiner_.set_flatten_limit(float(refiner_flatten) / 100.f);
 
 		kalman_.set_process_position_variance(process_position_variance);
 		kalman_.set_process_speed_variance(process_speed_variance);
@@ -167,13 +169,13 @@ public:
             // Detect
             std::vector<cv::Rect> occurences;
             detector_.detect(processed_frame, occurences);
-			std::cout << "[BGVF] " << "Detected " << occurences.size() << std::endl;
+			//std::cout << "[BGVF] " << "Detected " << occurences.size() << std::endl;
 
 			// Show Detections
             for (UInt i = 0; i < UInt(occurences.size()); ++i)
             {
 				float cness = refiner_.flatten(refiner_.crossness(processed_frame(occurences[i])));
-				std::cout << "[BGVF] " << "Crossness for occurence " << i << " = " << cness << std::endl;
+				//std::cout << "[BGVF] " << "Crossness for occurence " << i << " = " << cness << std::endl;
 				
                 cv::Rect adjusted_rect(int(ratio_x * occurences[i].x),
                     int(ratio_y * occurences[i].y),
@@ -254,12 +256,22 @@ public:
 			case 't' : refiner_threshold -= (refiner_threshold > 0);
 				std::cout << "[BGVF] " << "RefinerThreshold = " << float(refiner_threshold) * 0.01f << std::endl;
                 refiner_.set_threshold(float(refiner_threshold) * 0.01f); break;
-			case 'F' : refiner_flatten += (refiner_flatten < 99);
-				std::cout << "[BGVF] " << "RefinerFlatten = " << float(refiner_flatten) * 0.01f << std::endl;
-				refiner_.set_flatten_limit(float(refiner_flatten) * 0.01f); break;
-			case 'f' : refiner_flatten -= (refiner_flatten > 0);
-				std::cout << "[BGVF] " << "RefinerFlatten = " << float(refiner_flatten) * 0.01f << std::endl;
-                refiner_.set_flatten_limit(float(refiner_flatten) * 0.01f); break;
+			case 'L' :
+				a_low += a_low < 255 ? 1 : 0;
+				std::cout << "[BGVF] " << "L*a*b a_cut = " << int(a_low) << std::endl;
+                preprocessor_.set_low(a_low); break;
+			case 'l' :
+				a_low -= a_low > 0 ? 1 : 0;
+				std::cout << "[BGVF] " << "L*a*b a_cut = " <<  int(a_low)  << std::endl;
+                preprocessor_.set_low(a_low); break;
+			case 'H' :
+				a_high += a_high < 255 ? 1 : 0;
+				std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_high) << std::endl;
+                preprocessor_.set_high(a_high); break;
+			case 'h' :
+				a_high -= a_high > 0 ? 1 : 0;
+				std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_high) << std::endl;
+                preprocessor_.set_high(a_high); break;
             }
 
 		}

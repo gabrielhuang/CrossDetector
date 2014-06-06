@@ -44,6 +44,8 @@ private:
     UInt			rows_;
     UInt			cols_;
     bool			debug_;
+	float			low_;
+	float			high_;
 
     // Buffers
 private:
@@ -64,6 +66,8 @@ public:
     Preprocess& set_median_filter_bandwith(UInt x);
     Preprocess& set_resize(UInt rows, UInt cols);
     Preprocess& set_debug(bool flag);
+	Preprocess& set_low(UChar x);
+	Preprocess& set_high(UChar x);
 private:
 	Preprocess(const Preprocess&);
 
