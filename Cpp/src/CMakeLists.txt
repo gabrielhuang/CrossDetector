@@ -1,4 +1,5 @@
 foreach(subdir
+	Utilities
 	VideoFlow
 	UAV
 	WebcamTest

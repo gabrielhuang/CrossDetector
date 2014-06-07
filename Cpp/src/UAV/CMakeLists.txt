@@ -14,6 +14,9 @@ add_executable(${prj_name}
 	background_video_flow.h
 	main.cpp
 )
+add_dependencies(${prj_name}
+	Utilities
+)
 target_link_libraries(${prj_name} 
 	VideoMan 
 	${FREEGLUT_LIBRARIES}  

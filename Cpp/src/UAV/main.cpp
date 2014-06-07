@@ -6,8 +6,10 @@
 #include <sstream>
 #include <string>
 
+#include <utilities.h>
 #include "background_video_flow.h"
 #include "videoman_dev.h"
+
 
 using namespace std;
 
@@ -31,6 +33,45 @@ void assure(bool condition, const string& msg = "Assure", bool confirm = false)
 	}
 }
 
+template<typename VideoSourceType>
+class Communicator : public Observer<BackgroundVideoFlow<VideoSourceType> >
+{
+	typedef BackgroundVideoFlow<VideoSourceType> SpecificBackgroundVideoFlow;
+	int main_socket_;
+
+public:
+	Communicator(SpecificBackgroundVideoFlow* subject, int main_socket) :
+		Observer<SpecificBackgroundVideoFlow>(subject),
+		main_socket_(main_socket)
+	{
+	}
+
+	void update(BackgroundVideoFlow<VideoSourceType>* subject)
+	{
+		string info;
+		if(subject->has_new())
+		{
+			double x = subject->x();
+			double y = subject->y();
+			info = to_string(x) + "," + to_string(y);
+		}
+		else
+		{
+			info = "no target";
+		}
+		cout << "[Communicator] Send : \"" << info << "\"" << endl;
+		int num_chars = send(main_socket_, info.c_str(), info.size(), 0);
+		if(num_chars == SOCKET_ERROR, "send")
+		{
+			cout << "[Communicator]Server closed connection" << endl;
+			subject->set_loop(false);
+		}
+		else
+		{
+			cout << "[Communicator][Update] -> \"" << info << "\"" << endl;
+		}
+	}
+};
 
 int main(int argc, char* argv[])
 {
@@ -45,8 +86,7 @@ int main(int argc, char* argv[])
 		WSADATA wsa_data;
 		unsigned short port = 12800;
 		const int buffer_size = 1024;
-		char buffer[buffer_size];
-
+	
 		// Start protocol
 		assure(WSAStartup(MAKEWORD(2,2),&wsa_data) == 0, "WSAStartup", true);
 	
@@ -59,48 +99,20 @@ int main(int argc, char* argv[])
 		host.sin_port = htons(port); 
 		assure(connect(main_socket,(struct sockaddr*)&host,sizeof(host)) == 0, "connect", true);
 
-		// Start video flow
+		// VideoFlow Parameter
 		cout << "Connection ok, initiating video flow" << endl;
 		BackgroundVideoFlow<VideoSourceType> background_video_flow;
 		background_video_flow.cross_cascade_name = cross_cascade_name;
+		
+		// Set Observers
+		Communicator<VideoSourceType> communicator(&background_video_flow, main_socket);
+		Viewer<VideoSourceType> viewer(&background_video_flow);
+		Parametrizer<VideoSourceType> parametrizer(&background_video_flow);
+
+		// Start Video Flow - blocking
 		background_video_flow.init();
-		cout << "Initialized background video flow" << endl;
 
-		while(true)
-		{
-			cout << "Waiting for messages..." << endl;
-
-			int num_chars = recv(main_socket, buffer, buffer_size, 0);
-			assure(num_chars != SOCKET_ERROR, "recv");
-
-			if(num_chars == 0)
-			{
-				cout << "num_chars 0" << endl;
-				break;
-			}
-
-			buffer[num_chars] = 0; 
-			string msg(buffer);
-
-			if(!msg.compare("update"))
-			{
-				double x = background_video_flow.x();
-				double y = background_video_flow.y();
-				string info = to_string(x) + "," + to_string(y);
-				num_chars = send(main_socket, info.c_str(), info.size(),0);
-				assure(num_chars != SOCKET_ERROR, "send");
-				cout << "[Update] -> \"" << info << "\"" << endl;
-			}
-			else if(!msg.compare("fin"))
-			{
-				break;
-			}
-			else
-			{
-				cout << "Ignoring message : \"" << msg << "\"" << endl;
-			}
-		}
-
+		// End 
 		cout << "Connection closed by host" << endl;
 
 		assure(shutdown(main_socket,2) == 0, "shutdown", true);

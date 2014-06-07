@@ -1,11 +1,17 @@
+#pragma once
+
 #include <video_flow.h>
 #include <ctime>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <utilities.h>
 
-template <typename VideoSourceType>
-class BackgroundVideoFlow
+const int wait_delay = 5;
+
+template<typename VideoSourceType>
+class BackgroundVideoFlow : public Subject<BackgroundVideoFlow<VideoSourceType> >
 {
+	// Typedefs
 	typedef unsigned int		UInt;
 	typedef unsigned char		UChar;
 
@@ -13,6 +19,8 @@ class BackgroundVideoFlow
 	float				x_;
 	float				y_;
 	bool				loop_;
+	cv::Mat				raw_frame_;
+	cv::Mat				processed_frame_;
 
 	// Computers
 	Preprocess			preprocessor_;
@@ -29,15 +37,16 @@ class BackgroundVideoFlow
 
 	// Parameters
 public:
-	UInt				wait_delay;
 	UInt				resize_cols;
 	UInt				resize_rows;
 	UInt				median_filter_bandwith;
 	UChar				a_min; 
 	UChar				b_min;
 	UChar				l_max;
-	UChar				a_low;
-	UChar				a_high;
+	UChar				a_cut;
+	UChar				a_sat;
+
+	bool				has_visual_;
 
 	UInt				min_size;
 	UInt				min_count;
@@ -56,7 +65,6 @@ public:
 		x_(0.f),
 		y_(0.f),
 		loop_(true),
-		wait_delay(5),
 		resize_cols(720),
 		resize_rows(576),
 		median_filter_bandwith(5),
@@ -67,18 +75,19 @@ public:
 		min_count(34),
 		scale(1.2f),
 		refiner_threshold(50),
-		a_low(117),
-		a_high(170),
+		a_cut(117),
+		a_sat(170),
+		has_visual_(false),
 		process_position_variance(40.f),
 		process_speed_variance(1.f),
 		cross_cascade_name("..\\res\\cascade_5.xml")
 	{
 	}
 
-	void init()
+	void init(bool multi_threaded = false)
 	{
         preprocessor_.set_l_max(l_max).set_a_min(a_min).set_b_min(b_min);
-		preprocessor_.set_low(a_low).set_high(a_high);
+		preprocessor_.set_low(a_cut).set_high(a_sat);
         preprocessor_.set_resize(resize_rows, resize_cols);
         preprocessor_.set_median_filter_bandwith(median_filter_bandwith);
         preprocessor_.set_debug(false);
@@ -96,7 +105,15 @@ public:
 		float last_prediction_date = float(clock()) / float(CLOCKS_PER_SEC);
 
 		loop_ = true;
-		thread_ = new boost::thread(&BackgroundVideoFlow::loop, this);
+
+		if(multi_threaded)
+		{
+			thread_ = new boost::thread(&BackgroundVideoFlow::loop, this);
+		}
+		else
+		{
+			loop();
+		}
 	}
 
 	~BackgroundVideoFlow()
@@ -116,6 +133,13 @@ public:
 		}
 	}
 
+	inline bool has_new()
+	{
+		boost::mutex::scoped_lock lock(mutex_);
+		return has_visual_;
+	}
+
+	// Getters
 	float x()
 	{
 		boost::mutex::scoped_lock lock(mutex_);
@@ -141,12 +165,13 @@ public:
 
 		std::cout << "[BGVF] Started Loop" << std::endl;
 		float last_prediction_date = float(clock()) / float(CLOCKS_PER_SEC);
-		cv::Mat raw_frame, processed_frame;
+
 		while(true)
 		{
 			// Verify loop_ is true
 			{
 				boost::mutex::scoped_lock lock(mutex_);
+				has_visual_ = false;
 				if(!loop_)
 				{
 					break;
@@ -154,34 +179,34 @@ public:
 			}
 
 			// Get frame
-			*camera_ >> raw_frame;
-			if(raw_frame.empty())
+			*camera_ >> raw_frame_;
+			if(raw_frame_.empty())
             {
                 cv::waitKey(wait_delay);
             }
 
             // Preprocess
-            preprocessor_.get_soft(raw_frame, processed_frame);
-			//preprocessor_.get(raw_frame, processed_hard);
-            float ratio_x = float(raw_frame.cols) / processed_frame.cols;
-            float ratio_y = float(raw_frame.rows) / processed_frame.rows;
+            preprocessor_.get_soft(raw_frame_, processed_frame_);
+			//preprocessor_.get(raw_frame_, processed_hard);
+            float ratio_x = float(raw_frame_.cols) / processed_frame_.cols;
+            float ratio_y = float(raw_frame_.rows) / processed_frame_.rows;
 
             // Detect
             std::vector<cv::Rect> occurences;
-            detector_.detect(processed_frame, occurences);
+            detector_.detect(processed_frame_, occurences);
 			//std::cout << "[BGVF] " << "Detected " << occurences.size() << std::endl;
 
 			// Show Detections
             for (UInt i = 0; i < UInt(occurences.size()); ++i)
             {
-				float cness = refiner_.flatten(refiner_.crossness(processed_frame(occurences[i])));
+				float cness = refiner_.flatten(refiner_.crossness(processed_frame_(occurences[i])));
 				//std::cout << "[BGVF] " << "Crossness for occurence " << i << " = " << cness << std::endl;
 				
                 cv::Rect adjusted_rect(int(ratio_x * occurences[i].x),
                     int(ratio_y * occurences[i].y),
                     int(ratio_x * occurences[i].width),
                     int(ratio_y * occurences[i].height));
-                cv::rectangle(raw_frame, adjusted_rect, cv::Scalar(cness * 255.f, 0.f, 0.f, 3));
+                cv::rectangle(raw_frame_, adjusted_rect, cv::Scalar(cness * 255.f, 0.f, 0.f, 3));
             }
 
 			// Kalman Update by dt
@@ -190,12 +215,12 @@ public:
 
 			// Get most probable center
 			cv::Point center;
-			bool actually_found = refiner_.get_best(processed_frame, occurences, center);
+			bool actually_found = refiner_.get_best(processed_frame_, occurences, center);
 			if(actually_found)
 			{
 				// Draw Refined Center
 				cv::Point adjusted_center(int(ratio_x * float(center.x)), int(ratio_y * float(center.y)));
-				cv::circle(raw_frame, adjusted_center, 32, cv::Scalar(0.f, 0.f, 255.f, 0), CV_FILLED);
+				cv::circle(raw_frame_, adjusted_center, 32, cv::Scalar(0.f, 0.f, 255.f, 0), CV_FILLED);
 				std::cout << "[BGVF] " << "Cross @ " << adjusted_center << std::endl;
 
 				// Kalman Correct
@@ -212,68 +237,127 @@ public:
 			// Draw frame if in cross mode : red if actually detected, yellow if prediction
 			if(kalman_.still_tracking())
 			{
-				cv::rectangle(raw_frame, cv::Rect(0, 0, raw_frame.cols - 1, raw_frame.rows - 1), 
+				cv::rectangle(raw_frame_, cv::Rect(0, 0, raw_frame_.cols - 1, raw_frame_.rows - 1), 
 						      actually_found ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 255), 20);
 				cv::Point predicted_center = cv::Point(int(prediction.at<float>(0)), int(prediction.at<float>(1)));
 				cv::Point adjusted_predicted_center(int(ratio_x * float(predicted_center.x)), int(ratio_y * float(predicted_center.y)));
-				cv::circle(raw_frame, adjusted_predicted_center, 20, cv::Scalar(0.f, 255.f, 0, 0), CV_FILLED);
+				cv::circle(raw_frame_, adjusted_predicted_center, 20, cv::Scalar(0.f, 255.f, 0, 0), CV_FILLED);
 				
 				// Update x and y
 				{
 					boost::mutex::scoped_lock lock(mutex_);
-					x_ = predicted_center.x / float(processed_frame.cols) - 1.f;
-					y_ = predicted_center.y / float(processed_frame.rows) - 1.f;
+					x_ = predicted_center.x / float(processed_frame_.cols) - 1.f;
+					y_ = predicted_center.y / float(processed_frame_.rows) - 1.f;
 				}
 			}
 
-            // Show frames
-            cv::imshow("Raw Frame", raw_frame);
-			cv::imshow("Processed Soft", processed_frame);
-
-            // Delay & Tune
-            char key = cv::waitKey(wait_delay);
-            switch (key)
-            {
-            case 'C': min_count += 4; std::cout << "[BGVF] " << "min_count = " << min_count << std::endl;
-                detector_.set_min_count(min_count); break;
-            case 'c': min_count = std::max(1, int(min_count) - 5); std::cout << "[BGVF] " << "min_count = " << min_count << std::endl;
-                detector_.set_min_count(min_count); break;
-            case 'S': scale += 0.05f; std::cout << "[BGVF] " << "scale = " << scale << std::endl;
-                detector_.set_scale(scale); break;
-            case 's': scale = std::max(1.f, scale - 0.05f); std::cout << "[BGVF] " << "min_count = " << scale << std::endl;
-                detector_.set_scale(scale); break;
-            case 'A': a_min += 10; std::cout << "[BGVF] " << "a_min = " << int(a_min) << std::endl;
-                preprocessor_.set_a_min(a_min); break;
-            case 'a': a_min -= 10; std::cout << "[BGVF] " << "a_min = " << int(a_min) << std::endl;
-                preprocessor_.set_a_min(a_min); break;
-            case 'B': std::cout << "[BGVF] " << "b_min = " << int(++b_min) << std::endl;
-                preprocessor_.set_b_min(b_min); break;
-            case 'b': std::cout << "[BGVF] " << "b_min = " << int(--b_min) << std::endl;
-                preprocessor_.set_b_min(b_min); break;
-			case 'T' : refiner_threshold += (refiner_threshold < 99);
-				std::cout << "[BGVF] " << "RefinerThreshold = " << float(refiner_threshold) * 0.01f << std::endl;
-				refiner_.set_threshold(float(refiner_threshold) * 0.01f); break;
-			case 't' : refiner_threshold -= (refiner_threshold > 0);
-				std::cout << "[BGVF] " << "RefinerThreshold = " << float(refiner_threshold) * 0.01f << std::endl;
-                refiner_.set_threshold(float(refiner_threshold) * 0.01f); break;
-			case 'L' :
-				a_low += a_low < 255 ? 1 : 0;
-				std::cout << "[BGVF] " << "L*a*b a_cut = " << int(a_low) << std::endl;
-                preprocessor_.set_low(a_low); break;
-			case 'l' :
-				a_low -= a_low > 0 ? 1 : 0;
-				std::cout << "[BGVF] " << "L*a*b a_cut = " <<  int(a_low)  << std::endl;
-                preprocessor_.set_low(a_low); break;
-			case 'H' :
-				a_high += a_high < 255 ? 1 : 0;
-				std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_high) << std::endl;
-                preprocessor_.set_high(a_high); break;
-			case 'h' :
-				a_high -= a_high > 0 ? 1 : 0;
-				std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_high) << std::endl;
-                preprocessor_.set_high(a_high); break;
-            }
-
+			// Notify
+			has_visual_ = kalman_.still_tracking();
+			notify();
 		}
+	}
+
+	void get_raw_frame(cv::Mat& dst)
+	{
+		boost::mutex::scoped_lock lock(mutex_);
+		dst = raw_frame_.clone();
+	}
+
+	void get_processed_frame(cv::Mat& dst)
+	{
+		boost::mutex::scoped_lock lock(mutex_);
+		dst = processed_frame_.clone();
+	}
+
+	bool set_loop(bool flag)
+	{
+		boost::mutex::scoped_lock lock(mutex_);
+		loop_ = flag;
+	}
+};
+
+template<typename VideoSourceType>
+class Viewer : public Observer<BackgroundVideoFlow<VideoSourceType> >
+{
+	typedef BackgroundVideoFlow<VideoSourceType> SpecificBackgroundVideoFlow;
+
+	bool		wait_;
+	cv::Mat		raw_frame_;
+	cv::Mat		processed_frame_;
+
+public:
+	Viewer(SpecificBackgroundVideoFlow* subject, bool wait = true) :
+		Observer<SpecificBackgroundVideoFlow>(subject),
+		wait_(wait)
+	{
+	}
+
+	void update()
+	{
+		subject_->get_raw_frame(raw_frame_);
+		subject_->get_processed_frame(processed_frame_);
+		cv::imshow("Raw", raw_frame_);
+		cv::imshow("Processed", processed_frame_);
+		if(wait_)
+		{
+			cv::waitKey(wait_delay);
+		}
+	}
+};
+
+template<typename VideoSourceType>
+class Parametrizer : public Observer<BackgroundVideoFlow<VideoSourceType> >
+{
+	typedef BackgroundVideoFlow<VideoSourceType> SpecificBackgroundVideoFlow;
+public:
+	Parametrizer(SpecificBackgroundVideoFlow* subject) :
+		Observer<SpecificBackgroundVideoFlow>(subject)
+	{
+	}
+
+	void update()
+	{
+		// Delay & Tune
+		//switch(cv::waitKey(wait_delay))
+		//{
+		//case 'C': min_count += 4; std::cout << "[BGVF] " << "min_count = " << min_count << std::endl;
+		//	detector_.set_min_count(min_count); break;
+		//case 'c': min_count = std::max(1, int(min_count) - 5); std::cout << "[BGVF] " << "min_count = " << min_count << std::endl;
+		//	detector_.set_min_count(min_count); break;
+		//case 'S': scale += 0.05f; std::cout << "[BGVF] " << "scale = " << scale << std::endl;
+		//	detector_.set_scale(scale); break;
+		//case 's': scale = std::max(1.f, scale - 0.05f); std::cout << "[BGVF] " << "min_count = " << scale << std::endl;
+		//	detector_.set_scale(scale); break;
+		//case 'A': a_min += 10; std::cout << "[BGVF] " << "a_min = " << int(a_min) << std::endl;
+		//	preprocessor_.set_a_min(a_min); break;
+		//case 'a': a_min -= 10; std::cout << "[BGVF] " << "a_min = " << int(a_min) << std::endl;
+		//	preprocessor_.set_a_min(a_min); break;
+		//case 'B': std::cout << "[BGVF] " << "b_min = " << int(++b_min) << std::endl;
+		//	preprocessor_.set_b_min(b_min); break;
+		//case 'b': std::cout << "[BGVF] " << "b_min = " << int(--b_min) << std::endl;
+		//	preprocessor_.set_b_min(b_min); break;
+		//case 'T' : refiner_threshold += (refiner_threshold < 99);
+		//	std::cout << "[BGVF] " << "RefinerThreshold = " << float(refiner_threshold) * 0.01f << std::endl;
+		//	refiner_.set_threshold(float(refiner_threshold) * 0.01f); break;
+		//case 't' : refiner_threshold -= (refiner_threshold > 0);
+		//	std::cout << "[BGVF] " << "RefinerThreshold = " << float(refiner_threshold) * 0.01f << std::endl;
+		//	refiner_.set_threshold(float(refiner_threshold) * 0.01f); break;
+		//case 'L' :
+		//	a_cut += a_cut < 255 ? 1 : 0;
+		//	std::cout << "[BGVF] " << "L*a*b a_cut = " << int(a_cut) << std::endl;
+		//	preprocessor_.set_low(a_cut); break;
+		//case 'l' :
+		//	a_cut -= a_cut > 0 ? 1 : 0;
+		//	std::cout << "[BGVF] " << "L*a*b a_cut = " <<  int(a_cut)  << std::endl;
+		//	preprocessor_.set_low(a_cut); break;
+		//case 'H' :
+		//	a_sat += a_sat < 255 ? 1 : 0;
+		//	std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_sat) << std::endl;
+		//	preprocessor_.set_high(a_sat); break;
+		//case 'h' :
+		//	a_sat -= a_sat > 0 ? 1 : 0;
+		//	std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_sat) << std::endl;
+		//	preprocessor_.set_high(a_sat); break;
+		//}
 	}
 };
