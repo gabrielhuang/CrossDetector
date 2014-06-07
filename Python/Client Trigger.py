@@ -18,18 +18,18 @@ def initclient():
 
 def senddata():
     while True:
-        print("Tapez 'cible 1' pour partir")
+        print("Tapez '1' pour partir")
         msg_a_envoyer = str(input())
-        if (msg_a_envoyer=="cible 1"):
+        if (msg_a_envoyer=="1"):
             print("Egyptien mon capitaine!")
             connexion_avec_serveur.send("cible1".encode())
             break
         print("Mauvaise commande, la cible actuelle est la 0")
             
     while True:
-        print("Tapez 'cible 2' pour partir")
+        print("Tapez '2' pour partir")
         msg_a_envoyer = str(input())
-        if (msg_a_envoyer=="cible 2"):
+        if (msg_a_envoyer=="2"):
             print("Tout petit vu d'ici!")
             connexion_avec_serveur.send("cible2".encode())
             break

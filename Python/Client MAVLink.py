@@ -17,6 +17,7 @@ def initclient():
     msg_recu = msg_recu.decode()
     msg_recu = msg_recu.split(",")
     global TargetGPSWP
+    print("msg = {}".format(msg_recu))
     TargetGPSWP = [0,0]
     TargetGPSWP[0] = (float(msg_recu[0]),float(msg_recu[1]))
     TargetGPSWP[1] = (float(msg_recu[2]),float(msg_recu[3]))

@@ -9,11 +9,11 @@ import sys
 
 def inittargetWP():
     global TargetGPSWP
-    TargetGPSWP = [0,0]
-    WP1 = str(input("Entrez les coordonnées de la 1ère cible:\n"))
-    WP2 = str(input("Entrez les coordonnées de la 2ème cible:\n"))
-    TargetGPSWP = WP1 + "," + WP2
-    return
+    x = input("Entrez les coordonnées de la 1ère cible:\n") + \
+    input("Entrez les coordonnées de la 2ème cible:\n")
+    x = [str(y) for y in x]
+    TargetGPSWP = x[0] + "," + x[1] + "," + x[2] + "," + x[3]
+
 
 def initserv():
     global connexion_principale
