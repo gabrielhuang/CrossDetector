@@ -15,6 +15,7 @@ class BackgroundVideoFlow : public Subject<BackgroundVideoFlow<VideoSourceType> 
 	typedef unsigned int		UInt;
 	typedef unsigned char		UChar;
 
+public: // fast hack
 	// State
 	float				x_;
 	float				y_;
@@ -80,6 +81,7 @@ public:
 		has_visual_(false),
 		process_position_variance(40.f),
 		process_speed_variance(1.f),
+		thread_(nullptr),
 		cross_cascade_name("..\\res\\cascade_5.xml")
 	{
 	}
@@ -269,7 +271,7 @@ public:
 		dst = processed_frame_.clone();
 	}
 
-	bool set_loop(bool flag)
+	void set_loop(bool flag)
 	{
 		boost::mutex::scoped_lock lock(mutex_);
 		loop_ = flag;
@@ -318,46 +320,46 @@ public:
 	void update()
 	{
 		// Delay & Tune
-		//switch(cv::waitKey(wait_delay))
-		//{
-		//case 'C': min_count += 4; std::cout << "[BGVF] " << "min_count = " << min_count << std::endl;
-		//	detector_.set_min_count(min_count); break;
-		//case 'c': min_count = std::max(1, int(min_count) - 5); std::cout << "[BGVF] " << "min_count = " << min_count << std::endl;
-		//	detector_.set_min_count(min_count); break;
-		//case 'S': scale += 0.05f; std::cout << "[BGVF] " << "scale = " << scale << std::endl;
-		//	detector_.set_scale(scale); break;
-		//case 's': scale = std::max(1.f, scale - 0.05f); std::cout << "[BGVF] " << "min_count = " << scale << std::endl;
-		//	detector_.set_scale(scale); break;
-		//case 'A': a_min += 10; std::cout << "[BGVF] " << "a_min = " << int(a_min) << std::endl;
-		//	preprocessor_.set_a_min(a_min); break;
-		//case 'a': a_min -= 10; std::cout << "[BGVF] " << "a_min = " << int(a_min) << std::endl;
-		//	preprocessor_.set_a_min(a_min); break;
-		//case 'B': std::cout << "[BGVF] " << "b_min = " << int(++b_min) << std::endl;
-		//	preprocessor_.set_b_min(b_min); break;
-		//case 'b': std::cout << "[BGVF] " << "b_min = " << int(--b_min) << std::endl;
-		//	preprocessor_.set_b_min(b_min); break;
-		//case 'T' : refiner_threshold += (refiner_threshold < 99);
-		//	std::cout << "[BGVF] " << "RefinerThreshold = " << float(refiner_threshold) * 0.01f << std::endl;
-		//	refiner_.set_threshold(float(refiner_threshold) * 0.01f); break;
-		//case 't' : refiner_threshold -= (refiner_threshold > 0);
-		//	std::cout << "[BGVF] " << "RefinerThreshold = " << float(refiner_threshold) * 0.01f << std::endl;
-		//	refiner_.set_threshold(float(refiner_threshold) * 0.01f); break;
-		//case 'L' :
-		//	a_cut += a_cut < 255 ? 1 : 0;
-		//	std::cout << "[BGVF] " << "L*a*b a_cut = " << int(a_cut) << std::endl;
-		//	preprocessor_.set_low(a_cut); break;
-		//case 'l' :
-		//	a_cut -= a_cut > 0 ? 1 : 0;
-		//	std::cout << "[BGVF] " << "L*a*b a_cut = " <<  int(a_cut)  << std::endl;
-		//	preprocessor_.set_low(a_cut); break;
-		//case 'H' :
-		//	a_sat += a_sat < 255 ? 1 : 0;
-		//	std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_sat) << std::endl;
-		//	preprocessor_.set_high(a_sat); break;
-		//case 'h' :
-		//	a_sat -= a_sat > 0 ? 1 : 0;
-		//	std::cout << "[BGVF] " << "L*a*b a_sat = " << int(a_sat) << std::endl;
-		//	preprocessor_.set_high(a_sat); break;
-		//}
+		switch(cv::waitKey(wait_delay))
+		{
+		case 'C': subject_->min_count += 4; std::cout << "[Parametrizer] " << "min_count = " << subject_->min_count << std::endl;
+			subject_->detector_.set_min_count(subject_->min_count); break;
+		case 'c': subject_->min_count = std::max(1, int(subject_->min_count) - 5); std::cout << "[Parametrizer] " << "min_count = " << subject_->min_count << std::endl;
+			subject_->detector_.set_min_count(subject_->min_count); break;
+		case 'S': subject_->scale += 0.05f; std::cout << "[Parametrizer] " << "scale = " << subject_->scale << std::endl;
+			subject_->detector_.set_scale(subject_->scale); break;
+		case 's': subject_->scale = std::max(1.f, subject_->scale - 0.05f); std::cout << "[Parametrizer] " << "min_count = " << subject_->scale << std::endl;
+			subject_->detector_.set_scale(subject_->scale); break;
+		case 'A': subject_->a_min += 10; std::cout << "[Parametrizer] " << "a_min = " << int(subject_->a_min) << std::endl;
+			subject_->preprocessor_.set_a_min(subject_->a_min); break;
+		case 'a': subject_->a_min -= 10; std::cout << "[Parametrizer] " << "a_min = " << int(subject_->a_min) << std::endl;
+			subject_->preprocessor_.set_a_min(subject_->a_min); break;
+		case 'B': std::cout << "[Parametrizer] " << "b_min = " << int(++subject_->b_min) << std::endl;
+			subject_->preprocessor_.set_b_min(subject_->b_min); break;
+		case 'b': std::cout << "[Parametrizer] " << "b_min = " << int(--subject_->b_min) << std::endl;
+			subject_->preprocessor_.set_b_min(subject_->b_min); break;
+		case 'T' : subject_->refiner_threshold += (subject_->refiner_threshold < 99);
+			std::cout << "[Parametrizer] " << "RefinerThreshold = " << float(subject_->refiner_threshold) * 0.01f << std::endl;
+			subject_->refiner_.set_threshold(float(subject_->refiner_threshold) * 0.01f); break;
+		case 't' : subject_->refiner_threshold -= (subject_->refiner_threshold > 0);
+			std::cout << "[Parametrizer] " << "RefinerThreshold = " << float(subject_->refiner_threshold) * 0.01f << std::endl;
+			subject_->refiner_.set_threshold(float(subject_->refiner_threshold) * 0.01f); break;
+		case 'L' :
+			subject_->a_cut += subject_->a_cut < 255 ? 1 : 0;
+			std::cout << "[Parametrizer] " << "L*a*b a_cut = " << int(subject_->a_cut) << std::endl;
+			subject_->preprocessor_.set_low(subject_->a_cut); break;
+		case 'l' :
+			subject_->a_cut -= subject_->a_cut > 0 ? 1 : 0;
+			std::cout << "[Parametrizer] " << "L*a*b a_cut = " <<  int(subject_->a_cut)  << std::endl;
+			subject_->preprocessor_.set_low(subject_->a_cut); break;
+		case 'H' :
+			subject_->a_sat += subject_->a_sat < 255 ? 1 : 0;
+			std::cout << "[Parametrizer] " << "L*a*b a_sat = " << int(subject_->a_sat) << std::endl;
+			subject_->preprocessor_.set_high(subject_->a_sat); break;
+		case 'h' :
+			subject_->a_sat -= subject_->a_sat > 0 ? 1 : 0;
+			std::cout << "[Parametrizer] " << "L*a*b a_sat = " << int(subject_->a_sat) << std::endl;
+			subject_->preprocessor_.set_high(subject_->a_sat); break;
+		}
 	}
 };

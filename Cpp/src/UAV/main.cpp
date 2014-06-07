@@ -46,13 +46,13 @@ public:
 	{
 	}
 
-	void update(BackgroundVideoFlow<VideoSourceType>* subject)
+	void update()
 	{
 		string info;
-		if(subject->has_new())
+		if(subject_->has_new())
 		{
-			double x = subject->x();
-			double y = subject->y();
+			double x = subject_->x();
+			double y = subject_->y();
 			info = to_string(x) + "," + to_string(y);
 		}
 		else
@@ -63,12 +63,12 @@ public:
 		int num_chars = send(main_socket_, info.c_str(), info.size(), 0);
 		if(num_chars == SOCKET_ERROR, "send")
 		{
-			cout << "[Communicator]Server closed connection" << endl;
-			subject->set_loop(false);
+			cout << "[Communicator] Server closed connection" << endl;
+			subject_->set_loop(false);
 		}
 		else
 		{
-			cout << "[Communicator][Update] -> \"" << info << "\"" << endl;
+			cout << "[Communicator] [Update] -> \"" << info << "\"" << endl;
 		}
 	}
 };
