@@ -1,89 +1,122 @@
-#  -*- coding: utf8 -*-
+# -*- coding: utf8 -*-
 
-# Server side
+#Server side
 import socket
 from math import *
 from time import sleep
+import select
+import sys
+
+def inittargetWP():
+    global TargetGPSWP
+    TargetGPSWP = [0,0]
+    WP1 = str(input("Entrez les coordonnées de la 1ère cible:\n"))
+    WP2 = str(input("Entrez les coordonnées de la 2ème cible:\n"))
+    TargetGPSWP = WP1 + "," + WP2
+    return
 
 def initserv():
     global connexion_principale
-    global connexion_avec_client
     global msg_recu
     global hote
     global port
+    global inputs
+    global camval
     hote = ''
     port = 12800
     connexion_principale = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     connexion_principale.bind((hote, port))
     connexion_principale.listen(5)
     msg_recu = ""
-
-def updatetarget():
-    connexion_avec_client.send("update".encode())
-    msg_recu = connexion_avec_client.recv(100)
-    msg_recu = msg_recu.decode()
-    print(msg_recu)
-    x = msg_recu.split(",")
-    return float(x[0]), float(x[1])
-
-def getwaypoint(anglelacet, angleroulis, angletangage, altitude, currentlat,currentlong):
-    deltapixx, deltapixy = updatetarget()
-    deltapixx = deltapixx*1 # correction fisheye
-    deltapixy = deltapixy*1 # correction fisheye
-    """
-    la latitude augmente vers le nord
-    la longitude augmente vers l'est (Greenwich = 0)
-    les angles sont nuls à l'horizontale, pointant vers le nord
-    les angles en degres
-    l'altitude en mé
-    la position GPS en degres
-    angleroulis est positifési le drone va vers la droite
-    angletangage est positif si le drone va vers l'avant
-    les deltapix sont nuls si le barycentre est au milieu de l'image,
-    positifs si il est en haut à droite
+    inputs = []
+    camval = ""
     
-    """
-    currentlat = currentlat*111205.12 # conversion en m
-    currentlong = currentlong*73517.0 # conversion en m
-    lref = 1 # longueur de la regle utilisee pour le calibrage en m
-    href = 1 # hauteur de la camera pour lé calibrage
-    deltapixrefx = 200 # taille ée la regle pour le calibrage, apres correction fisheye
-    deltapixrefy = 200 # taille de la règle pour le calibrage, après correction fisheye
-    wplat = currentlat -\
-            (tan(angletangage*pi/180)*altitude -
-            deltapixy*altitude*lref/(cos(angletangage*pi/180)*href*deltapixrefx))\
-            *cos(anglelacet*pi/180) +\
-            (tan(angleroulis*pi/180)*altitude +
-            deltapixx*altitude*lref/(cos(angleroulis*pi/180)*href*deltapixrefy))\
-            *sin(anglelacet*pi/180)
-    wplong = currentlong -\
-            (tan(angletangage*pi/180)*altitude -
-            deltapixy*altitude*lref/(cos(angletangage*pi/180)*href*deltapixrefx))\
-            *sin(anglelacet*pi/180) +\
-            (tan(angleroulis*pi/180)*altitude +
-            deltapixx*altitude*lref/(cos(angleroulis*pi/180)*href*deltapixrefy))\
-            *cos(anglelacet*pi/180)
-    wplat = wplat/111205.12
-    wplong = wplong/73517.0
-    return (wplat, wplong)
-    
-def closeserv():
-    print("Fermeture de la connexion")
-    connexion_principale.close()
-    return
-
-if __name__ == "__main__":
-    initserv()
+def tempserv():
+    global connexion_avec_client_camera
+    global connexion_avec_client_script
+    global connexion_avec_client_trigger
     while True:
+        inputs.append(connexion_principale)
+        notconnected=True
         print("Le serveur écoute à présent sur le port {}".format(port))
         try:
-            connexion_avec_client, infos_connexion = connexion_principale.accept()
-            print("Connexion acceptee de {}".format(infos_connexion))
-            while True:
-                print("Demande coordonnees...")
-                updatetarget()
-                sleep(1.)
+            while notconnected:
+                print("En attente du client c++")
+                inputready,outputready,exceptready = select.select(inputs,[],[])
+                for s in inputready:
+                    if s==connexion_principale:
+                        connexion_avec_client_camera, infos_connexion = connexion_principale.accept()
+                        inputs.append(connexion_avec_client_camera)
+                        print("Connexion acceptee de {}".format(infos_connexion))
+                        notconnected = False
+                    else:
+                        msg_recu = msg_recu = s.recv(100)
+                        if msg_recu not in ["Data pls", "cible1", "cible2"]:
+                            camval = msg_recu
+            notconnected = True
+
+            while notconnected:
+                print("En attente du script MAVLink")
+                inputready,outputready,exceptready = select.select(inputs,[],[])
+                for s in inputready:
+                    if s==connexion_principale:
+                        connexion_avec_client_script, infos_connexion = connexion_principale.accept()
+                        inputs.append(connexion_avec_client_script)
+                        print("Connexion acceptee de {}".format(infos_connexion))
+                        notconnected = False
+                        connexion_avec_client_script.send(TargetGPSWP.encode())
+                    else:
+                        msg_recu = msg_recu = s.recv(100)
+                        if msg_recu not in ["Data pls", "cible1", "cible2"]:
+                            camval = msg_recu
+            notconnected = True
+            
+            while notconnected:
+                print("En attente du trigger")
+                inputready,outputready,exceptready = select.select(inputs,[],[])
+                for s in inputready:
+                    if s==connexion_principale:
+                        connexion_avec_client_trigger, infos_connexion = connexion_principale.accept()
+                        inputs.append(connexion_avec_client_trigger)
+                        print("Connexion acceptee de {}".format(infos_connexion))
+                        notconnected = False
+                    else:
+                        msg_recu = msg_recu = s.recv(100)
+                        if msg_recu not in ["Data pls", "cible1", "cible2"]:
+                            camval = msg_recu
+            break
         except:
             pass
-        connexion_avec_client.close()
-    closeserv()
+        print("Erreur de connexion, veuillez recommencer :D")
+        connexion_avec_client_camera.close()
+        connexion_avec_client_script.close()
+        connexion_avec_client_trigger.close()
+
+def checkdata():
+    while True:
+        print("En attente de données...")
+        inputready,outputready,exceptready = select.select(inputs,[],[])
+        for s in inputready:
+            msg_recu = s.recv(100)
+            msg_recu = msg_recu.decode()
+            print("Vous avez 1 nouveau message: " + msg_recu)
+            if msg_recu:
+                if msg_recu not in ["Data pls", "cible1", "cible2"]:
+                    camval = msg_recu
+                elif msg_recu== "Data pls":
+                    connexion_avec_client_script.send(camval.encode())
+                    print("Données envoyées: "+camval)
+                elif (msg_recu=="cible1" or msg_recu=="cible2"):
+                    connexion_avec_client_script.send(msg_recu.encode())
+                    print("Message Transmis: "+ msg_recu)
+            else:
+                s.close()
+                print("Mayday Mayday Mayday, on a perdu un client!")                
+                inputs.remove(s)
+                return "Erreur"
+        
+if __name__ == "__main__":
+    inittargetWP()
+    initserv()
+    tempserv()
+    checkdata()
