@@ -16,11 +16,7 @@ currMAVWP = None
 a = pi / 180
 
 def initcharge():
-    global currGPSpos
-    global initGPSWP
-    global initMAVWP
-    global currGPSWP
-    global currMAVWP
+
     print ('Installation charge 10s')
     time.sleep(1)
     print ('9s')
@@ -53,11 +49,6 @@ def initcharge():
 clr.AddReference("MissionPlanner.Utilities") # includes the Utilities class
 
 def initclient():
-    global currGPSpos
-    global initGPSWP
-    global initMAVWP
-    global currGPSWP
-    global currMAVWP
     #Initialisation connexion serveur
     print("Bienvenue dans le Client MAVLink")
     hote = "localhost"
@@ -96,11 +87,6 @@ def initclient():
     return
 
 def waitdata():
-    global currGPSpos
-    global initGPSWP
-    global initMAVWP
-    global currGPSWP
-    global currMAVWP
     actualtarget = 0
     distok = 0
     x = ()
@@ -122,10 +108,10 @@ def waitdata():
 
     #En mode Guided vers la cible 1
     distok = 0
+	nbpertedata = 0
     while actualtarget==1:
         currGPSpos = (cs.lat,cs.lng)
         if distcalc(currGPSpos, initGPSWP[0]) < 10:
-
             #Demande de données cam
             connexion_avec_serveur.send("Data pls".encode())
             msg_recu = connexion_avec_serveur.recv(100)
@@ -133,10 +119,10 @@ def waitdata():
 
             #Si aucune croix trouvée
             if msg_recu=="no target":
-                print("On a perdu la cible!")
+                print("On a perdu la cible 1!")
                 nbpertedata = nbpertedata+1
                 if nbpertedata==5:
-                    print("Retour à la source")
+                    print("Retour à la source 1")
                     currMAVWP = initMAVWP[0]
                     MAV.setGuidedModeWP(currMAVWP)
                     currGPSWP = initGPSWP[0]
@@ -146,11 +132,11 @@ def waitdata():
             #Si croix trouvée
             else:
                 x = msg_recu.split(",")
-                print("Updating Target: " + x[0], x[1])
+                print("Updating Calculated Target 1: " + x[0], x[1])
                 tempGPSWP = getwaypoint(cs.yaw,cs.roll,cs.pitch,cs.alt,currGPSpos[0],currGPSpos[1],float(x[0])*360,float(x[1])*288)
                 print(tempGPSWP)
 
-                print("actualisation wp")
+                print("Mesure WP 1")
                 #Actualisation du WP
                 if dist(tempGPSWP, initGPSWP[0]) <10:
                     currMAVWP = MissionPlanner.Utilities.Locationwp() # creating waypoint
@@ -195,6 +181,7 @@ def waitdata():
 
     #En mode Guided vers la cible 2
     distok = 0
+	nbpertedata = 0
     while actualtarget==2:
         currGPSpos = (cs.lat,cs.lng)
         if distcalc(currGPSpos, initGPSWP[1]) < 10:
@@ -268,12 +255,6 @@ def getwaypoint(anglelacet, angleroulis, angletangage, altitude, currentlat, cur
     positifs si il est en haut à droite
 
     """
-    global currGPSpos
-    global initGPSWP
-    global initMAVWP
-    global currGPSWP
-    global currMAVWP
-    
     currentlat = currentlat*111205.12 #conversion en m
     currentlong = currentlong*73517.0 #conversion en m
     lref = 2.50 #longueur de la regle utilisee pour le calibrage en m
