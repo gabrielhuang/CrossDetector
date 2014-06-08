@@ -2,7 +2,7 @@
 import sys
 sys.path.append(r"C:\Python33\Lib")
 import socket
-import time
+from time import *
 from math import *
 import clr
 import MissionPlanner
