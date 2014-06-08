@@ -7,12 +7,14 @@ from time import sleep
 import select
 import sys
 
+global inputs
+camval = ""
+
 def inittargetWP():
     global TargetGPSWP
-    x = input("Entrez les coordonnées de la 1ère cible:\n") + \
+    TargetGPSWP = input("Entrez les coordonnées de la 1ère cible:\n") + "," +\
     input("Entrez les coordonnées de la 2ème cible:\n")
-    x = [str(y) for y in x]
-    TargetGPSWP = x[0] + "," + x[1] + "," + x[2] + "," + x[3]
+    print(TargetGPSWP)
 
 
 def initserv():
@@ -20,7 +22,6 @@ def initserv():
     global msg_recu
     global hote
     global port
-    global inputs
     global camval
     hote = ''
     port = 12800
@@ -29,7 +30,6 @@ def initserv():
     connexion_principale.listen(5)
     msg_recu = ""
     inputs = []
-    camval = ""
     
 def tempserv():
     global connexion_avec_client_camera
