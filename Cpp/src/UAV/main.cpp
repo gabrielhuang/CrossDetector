@@ -49,7 +49,7 @@ public:
 	void update()
 	{
 		string info;
-		if(subject_->has_new())
+		if(subject_->has_visual())
 		{
 			double x = subject_->x();
 			double y = subject_->y();

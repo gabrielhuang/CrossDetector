@@ -135,7 +135,7 @@ public:
 		}
 	}
 
-	inline bool has_new()
+	inline bool has_visual()
 	{
 		boost::mutex::scoped_lock lock(mutex_);
 		return has_visual_;
