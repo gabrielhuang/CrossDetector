@@ -16,7 +16,11 @@ currMAVWP = None
 a = pi / 180
 
 def initcharge():
-
+    global currGPSpos
+    global initGPSWP
+    global initMAVWP
+    global currGPSWP
+    global currMAVWP
     print ('Installation charge 10s')
     time.sleep(1)
     print ('9s')
@@ -49,6 +53,11 @@ def initcharge():
 clr.AddReference("MissionPlanner.Utilities") # includes the Utilities class
 
 def initclient():
+    global currGPSpos
+    global initGPSWP
+    global initMAVWP
+    global currGPSWP
+    global currMAVWP
     #Initialisation connexion serveur
     print("Bienvenue dans le Client MAVLink")
     hote = "localhost"
@@ -87,6 +96,11 @@ def initclient():
     return
 
 def waitdata():
+    global currGPSpos
+    global initGPSWP
+    global initMAVWP
+    global currGPSWP
+    global currMAVWP
     actualtarget = 0
     distok = 0
     x = ()
@@ -254,6 +268,12 @@ def getwaypoint(anglelacet, angleroulis, angletangage, altitude, currentlat, cur
     positifs si il est en haut à droite
 
     """
+    global currGPSpos
+    global initGPSWP
+    global initMAVWP
+    global currGPSWP
+    global currMAVWP
+    
     currentlat = currentlat*111205.12 #conversion en m
     currentlong = currentlong*73517.0 #conversion en m
     lref = 2.50 #longueur de la regle utilisee pour le calibrage en m
