@@ -7,7 +7,7 @@ from time import sleep
 import select
 import sys
 
-global inputs
+global camval
 camval = ""
 
 def inittargetWP():
@@ -22,7 +22,7 @@ def initserv():
     global msg_recu
     global hote
     global port
-    global camval
+    global inputs
     hote = ''
     port = 12800
     connexion_principale = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -2,10 +2,10 @@
 import sys
 sys.path.append(r"C:\Python33\Lib")
 import socket
-from time import *
+import time
 from math import *
-import clr
-import MissionPlanner
+#import clr
+#import MissionPlanner
 
 global GPSpos
 GPSpos = ()
@@ -14,27 +14,27 @@ a = pi / 180
 
 def initcharge():
 
-    print 'Installation charge 10s'
+    print ('Installation charge 10s')
     time.sleep(1)
-    print '9s'
+    print ('9s')
     time.sleep(1)
-    print '8s'
+    print ('8s')
     time.sleep(1)
-    print '7s'
+    print ('7s')
     time.sleep(1)
-    print '6s'
+    print ('6s')
     time.sleep(1)
-    print '5s'
+    print ('5s')
     time.sleep(1)
-    print '4s'
+    print ('4s')
     time.sleep(1)
-    print '3s'
+    print ('3s')
     time.sleep(1)
-    print '2s'
+    print ('2s')
     time.sleep(1)
-    print '1s'
+    print ('1s')
     time.sleep(1)
-    print '0s'
+    print ('0s')
     Script.SendRC(6,1600,True)
     time.sleep(2)
     Script.SendRC(6,1400,True)
@@ -42,7 +42,7 @@ def initcharge():
     Script.SendRC(6,1800,True)
     time.sleep(4)
     Script.SendRC(6,1600,True)
-    print 'Installation charge terminée'
+    print ('Installation charge terminée')
     clr.AddReference("MissionPlanner.Utilities") # includes the Utilities class
 
 def initclient():
@@ -146,7 +146,7 @@ def waitdata():
 
             #Test si ok pour largage
             if dist(currGPSpos, currGPSWP) < 1:
-               distok++
+                distok = distok+1
                 if distok ==5:
                     Script.SendRC(6,1400,True) #servo in pos 2 : open
                     print ("Charge 1 larguée")
@@ -158,8 +158,8 @@ def waitdata():
                 
         sleep(2.)
 
-currMAVWP = initMAVWP[1]
-currGPSWP = initGPSWP[1]
+    currMAVWP = initMAVWP[1]
+    currGPSWP = initGPSWP[1]
     while actualtarget==1:
         msg_recu = connexion_avec_serveur.recv(100)
         msg_recu = msg_recu.decode()
@@ -217,7 +217,7 @@ currGPSWP = initGPSWP[1]
 
             #Test si ok pour largage
             if dist(currGPSpos, currGPSWP) < 1:
-               distok++
+                distok = distok+1
                 if distok ==5:
                     Script.SendRC(6,1800,True) #servo in pos 2 : open
                     print ("Charge 2 larguée")
