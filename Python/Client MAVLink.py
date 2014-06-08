@@ -108,7 +108,7 @@ def waitdata():
 
     #En mode Guided vers la cible 1
     distok = 0
-	nbpertedata = 0
+    nbpertedata = 0
     while actualtarget==1:
         currGPSpos = (cs.lat,cs.lng)
         if distcalc(currGPSpos, initGPSWP[0]) < 10:
@@ -181,7 +181,7 @@ def waitdata():
 
     #En mode Guided vers la cible 2
     distok = 0
-	nbpertedata = 0
+    nbpertedata = 0
     while actualtarget==2:
         currGPSpos = (cs.lat,cs.lng)
         if distcalc(currGPSpos, initGPSWP[1]) < 10:
