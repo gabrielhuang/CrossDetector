@@ -19,10 +19,10 @@ def initclient():
 
 def senddata():
     while True:
-        if randint(1,10)==1:
-            msg_a_envoyer = "no target"
-        else:
-            msg_a_envoyer = str(float(randint(-1000,1000))/1000)+","+str(float(randint(-1000,1000))/1000)
+        #if randint(1,10)==1:
+        msg_a_envoyer = "no target"
+        #else:
+           #msg_a_envoyer = str(float(randint(-1000,1000))/1000)+","+str(float(randint(-1000,1000))/1000)
         print("Données envoyées: " + msg_a_envoyer)
         connexion_avec_serveur.send(msg_a_envoyer.encode())
         sleep(0.5)

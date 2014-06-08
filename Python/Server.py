@@ -12,8 +12,9 @@ camval = ""
 
 def inittargetWP():
     global TargetGPSWP
-    TargetGPSWP = input("Entrez les coordonnées de la 1ère cible:\n") + "," +\
-    input("Entrez les coordonnées de la 2ème cible:\n")
+    #TargetGPSWP = input("Entrez les coordonnées de la 1ère cible:\n") + "," +\
+    #input("Entrez les coordonnées de la 2ème cible:\n")
+    TargetGPSWP = "48.763754,2.288440,0,0"
     print(TargetGPSWP)
 
 

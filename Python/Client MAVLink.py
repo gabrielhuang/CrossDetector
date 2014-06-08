@@ -4,12 +4,15 @@ sys.path.append(r"C:\Python33\Lib")
 import socket
 import time
 from math import *
-#import clr
-#import MissionPlanner
+import clr
+import MissionPlanner
 
-global GPSpos
-GPSpos = ()
-global a
+currGPSpos = ()
+initGPSWP = None
+initMAVWP = None
+currGPSWP =  None
+currMAVWP = None
+
 a = pi / 180
 
 def initcharge():
@@ -43,7 +46,7 @@ def initcharge():
     time.sleep(4)
     Script.SendRC(6,1600,True)
     print ('Installation charge terminée')
-    clr.AddReference("MissionPlanner.Utilities") # includes the Utilities class
+clr.AddReference("MissionPlanner.Utilities") # includes the Utilities class
 
 def initclient():
     #Initialisation connexion serveur
@@ -59,13 +62,13 @@ def initclient():
     msg_recu = connexion_avec_serveur.recv(200)
     msg_recu = msg_recu.decode()
     msg_recu = msg_recu.split(",")
-    global TargetGPSWP
     initGPSWP = [(),()]
     initGPSWP[0] = (float(msg_recu[0]),float(msg_recu[1]))
     initGPSWP[1] = (float(msg_recu[2]),float(msg_recu[3]))
-    print(TargetGPSWP[0])
-    print(TargetGPSWP[1])
+    print(initGPSWP[0])
+    print(initGPSWP[1])
 
+    print("Création initWP") 
     #Création des MAVWP des cibles initiales, et init des MAV/GPSWP vers la cible 1
     initMAVWP = [0,0]
     for i in range(2):
@@ -78,8 +81,9 @@ def initclient():
         MissionPlanner.Utilities.Locationwp.alt.SetValue(initMAVWP[i],alt)   # sets altitude
         if i==0:
             currGPSWP = (lat,lng)
-
+    print("curmavinit1")
     currMAVWP = initMAVWP[0]
+    print("curmavinit2")
     return
 
 def waitdata():
@@ -87,7 +91,7 @@ def waitdata():
     distok = 0
     x = ()
     nbpertedata = 0
-
+    print("Attente cible 1")
     #En mode auto
     while actualtarget==0:
         msg_recu = connexion_avec_serveur.recv(100)
@@ -96,7 +100,8 @@ def waitdata():
             actualtarget = 1
             wpstop = cs.wpno
             Script.ChangeMode("Guided")
-            MAV.setGuidedModeWP(currentMAVWP)
+            MAV.setGuidedModeWP(initMAVWP[0])
+            print("Guided mode ok")
         else:
             print(msg_recu)
             return "Input Target 1 Error"
@@ -118,9 +123,9 @@ def waitdata():
                 nbpertedata = nbpertedata+1
                 if nbpertedata==5:
                     print("Retour à la source")
-                    currentMAVWP = initMAVWP[0]
-                    MAV.setGuidedModeWP(currentMAVWP)
-                    currentGPSWP = initGPSWP[0]
+                    currMAVWP = initMAVWP[0]
+                    MAV.setGuidedModeWP(currMAVWP)
+                    currGPSWP = initGPSWP[0]
                     distok = 0
                     nbpertedata=0
 
@@ -128,9 +133,10 @@ def waitdata():
             else:
                 x = msg_recu.split(",")
                 print("Updating Target: " + x[0], x[1])
-                tempGPSWP = getwaypoint(cs.yaw,cs.roll,cs.pitch,cs.alt,currGPSpos[0],currGPSpos[1],float(x[0]),float(x[1]))
+                tempGPSWP = getwaypoint(cs.yaw,cs.roll,cs.pitch,cs.alt,currGPSpos[0],currGPSpos[1],float(x[0])*360,float(x[1])*288)
                 print(tempGPSWP)
 
+                print("actualisation wp")
                 #Actualisation du WP
                 if dist(tempGPSWP, initGPSWP[0]) <10:
                     currMAVWP = MissionPlanner.Utilities.Locationwp() # creating waypoint
@@ -144,6 +150,7 @@ def waitdata():
                     currGPSWP = (lat,lng)
                 i = 0
 
+            print("test largage")
             #Test si ok pour largage
             if dist(currGPSpos, currGPSWP) < 1:
                 distok = distok+1
@@ -189,9 +196,9 @@ def waitdata():
                 nbpertedata = nbpertedata+1
                 if nbpertedata==5:
                     print("Retour à la source")
-                    currentMAVWP = initMAVWP[1]
-                    MAV.setGuidedModeWP(currentMAVWP)
-                    currentGPSWP = initGPSWP[1]
+                    currMAVWP = initMAVWP[1]
+                    MAV.setGuidedModeWP(currMAVWP)
+                    currGPSWP = initGPSWP[1]
                     distok = 0
                     nbpertedata=0
 
@@ -283,7 +290,7 @@ def distcalc(WP1,WP2):
     return ((rad_dist * 3437.74677 * 1.1508) * 1.6093470878864446)*1000
 
 #if __name__ == "__main__":
-initcharge()
+#initcharge()
 initclient()
 waitdata()
 input()
